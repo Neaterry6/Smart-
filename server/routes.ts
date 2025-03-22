@@ -23,22 +23,22 @@ if (!fs.existsSync(uploadsDir)) {
 // Configure multer for file uploads
 const upload = multer({
   storage: multer.diskStorage({
-    destination: function (req: Request, file: Express.Multer.File, cb: multer.FileFilterCallback) {
+    destination: function (req, file, cb) {
       cb(null, uploadsDir);
     },
-    filename: function (req: Request, file: Express.Multer.File, cb: multer.FileFilterCallback) {
+    filename: function (req, file, cb) {
       // Generate a unique filename
       const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
       const fileExtension = path.extname(file.originalname);
       cb(null, uniqueSuffix + fileExtension);
     },
   }),
-  fileFilter: (req: Request, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
+  fileFilter: (req, file, cb) => {
     // Accept only PDF files
     if (file.mimetype === "application/pdf") {
       cb(null, true);
     } else {
-      cb(new Error("Only PDF files are allowed"));
+      cb(new Error("Only PDF files are allowed") as any, false);
     }
   },
   limits: {
