@@ -96,36 +96,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.error("Upload error:", err);
         return res.status(400).json({ message: err.message });
       }
-    try {
-      // req.file is guaranteed to exist by multer middleware
-      const file = req.file as Express.Multer.File;
-      if (!file) {
-        return res.status(400).json({ message: "No file uploaded" });
+      try {
+        // req.file is guaranteed to exist by multer middleware
+        const file = req.file as Express.Multer.File;
+        if (!file) {
+          return res.status(400).json({ message: "No file uploaded" });
+        }
+
+        const documentData = {
+          filename: file.filename,
+          originalName: file.originalname,
+          fileSize: file.size,
+          processingStatus: "processing",
+          userId: (req.user as User).id,
+        };
+
+        const validatedData = insertDocumentSchema.parse(documentData);
+        const document = await storage.createDocument(validatedData);
+
+        // Process the document asynchronously
+        processDocument(path.join(uploadsDir, document.filename), document.id)
+          .catch(console.error);
+
+        res.status(201).json(document);
+      } catch (error) {
+        if (error instanceof z.ZodError) {
+          return res.status(400).json({ message: "Invalid document data", errors: error.errors });
+        }
+        res.status(500).json({ message: "Failed to upload document" });
       }
-
-      const documentData = {
-        filename: file.filename,
-        originalName: file.originalname,
-        fileSize: file.size,
-        processingStatus: "processing",
-        userId: (req.user as User).id,
-      };
-
-      const validatedData = insertDocumentSchema.parse(documentData);
-      const document = await storage.createDocument(validatedData);
-
-      // Process the document asynchronously
-      processDocument(path.join(uploadsDir, document.filename), document.id)
-        .catch(console.error);
-
-      res.status(201).json(document);
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ message: "Invalid document data", errors: error.errors });
-      }
-      res.status(500).json({ message: "Failed to upload document" });
-    }
-  });
+    });
+  } catch (error) {
+    console.error("Upload error:", error);
+    res.status(500).json({ message: "Failed to process upload" });
+  }
+});
 
   // Flashcards endpoints
   app.get("/api/documents/:id/flashcards", isAuthenticated, async (req, res) => {
