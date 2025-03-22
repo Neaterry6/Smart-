@@ -24,6 +24,94 @@ export default function UploadTab() {
     mutationFn: async (file: File) => {
       const formData = new FormData();
       formData.append("file", file);
+      return apiRequest.post("/api/documents/upload", formData);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/documents"] });
+      toast({
+        title: "Success",
+        description: "Document uploaded successfully",
+      });
+      setIsUploading(false);
+    },
+    onError: (error) => {
+      console.error("Upload error:", error);
+      toast({
+        title: "Error",
+        description: "Failed to upload document",
+        variant: "destructive",
+      });
+      setIsUploading(false);
+    },
+  });
+
+  const handleFileUpload = async (file: File) => {
+    if (!file || file.type !== "application/pdf") {
+      toast({
+        title: "Error",
+        description: "Please select a PDF file",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (file.size > 25 * 1024 * 1024) {
+      toast({
+        title: "Error",
+        description: "File size must be less than 25MB",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsUploading(true);
+    await uploadMutation.mutateAsync(file);
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+  };
+
+  const handleDrop = async (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const file = e.dataTransfer.files[0];
+    await handleFileUpload(file);
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      await handleFileUpload(file);
+    }
+  };
+
+  const handleBrowseClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const navigateToDocument = (id: number) => {
+    navigate(`/documents/${id}`);
+  };
+
+  const formatBytes = (bytes: number) => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  };
+
+  const uploadMutation = useMutation({
+    mutationFn: async (file: File) => {
+      const formData = new FormData();
+      formData.append("file", file);
       const response = await apiRequest("POST", "/api/documents/upload", null, formData);
       return await response.json();
     },
