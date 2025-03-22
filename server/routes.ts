@@ -1,4 +1,4 @@
-import type { Express } from "express";
+import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import multer from "multer";
@@ -8,7 +8,7 @@ import { dirname } from "path";
 import { fileURLToPath } from "url";
 import { processDocument } from "./openai";
 import { z } from "zod";
-import { insertDocumentSchema } from "@shared/schema";
+import { insertDocumentSchema, User } from "@shared/schema";
 import { setupAuth } from "./auth";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -23,17 +23,17 @@ if (!fs.existsSync(uploadsDir)) {
 // Configure multer for file uploads
 const upload = multer({
   storage: multer.diskStorage({
-    destination: function (req, file, cb) {
+    destination: function (req: Request, file: Express.Multer.File, cb: multer.FileFilterCallback) {
       cb(null, uploadsDir);
     },
-    filename: function (req, file, cb) {
+    filename: function (req: Request, file: Express.Multer.File, cb: multer.FileFilterCallback) {
       // Generate a unique filename
       const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
       const fileExtension = path.extname(file.originalname);
       cb(null, uniqueSuffix + fileExtension);
     },
   }),
-  fileFilter: (req, file, cb) => {
+  fileFilter: (req: Request, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
     // Accept only PDF files
     if (file.mimetype === "application/pdf") {
       cb(null, true);
@@ -46,25 +46,30 @@ const upload = multer({
   },
 });
 
+// Auth middleware
+const isAuthenticated = (req: Request, res: Response, next: NextFunction) => {
+  if (!req.isAuthenticated()) {
+    return res.status(401).json({ message: "Not authenticated" });
+  }
+  next();
+};
+
 export async function registerRoutes(app: Express): Promise<Server> {
   // Setup authentication
   setupAuth(app);
+  
   // Documents endpoints
-  app.get("/api/documents", async (req, res) => {
+  app.get("/api/documents", isAuthenticated, async (req, res) => {
     try {
-      if (!req.isAuthenticated()) {
-        return res.status(401).json({ message: "Not authenticated" });
-      }
-      
       // Get only the current user's documents
-      const documents = await storage.getAllDocuments(req.user!.id);
+      const documents = await storage.getAllDocuments((req.user as User).id);
       res.json(documents);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch documents" });
     }
   });
 
-  app.get("/api/documents/:id", async (req, res) => {
+  app.get("/api/documents/:id", isAuthenticated, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const document = await storage.getDocument(id);
@@ -73,30 +78,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Document not found" });
       }
       
+      // Verify document belongs to current user
+      if (document.userId !== (req.user as User).id) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+      
       res.json(document);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch document" });
     }
   });
 
-  app.post("/api/documents/upload", (req, res, next) => {
-    // Check if user is authenticated
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({ message: "You must be logged in to upload documents" });
-    }
-    next();
-  }, upload.single("file"), async (req, res) => {
+  app.post("/api/documents/upload", isAuthenticated, upload.single("file"), async (req, res) => {
     try {
-      if (!req.file) {
+      // req.file is guaranteed to exist by multer middleware
+      const file = req.file as Express.Multer.File;
+      if (!file) {
         return res.status(400).json({ message: "No file uploaded" });
       }
 
       const documentData = {
-        filename: req.file.filename,
-        originalName: req.file.originalname,
-        fileSize: req.file.size,
+        filename: file.filename,
+        originalName: file.originalname,
+        fileSize: file.size,
         processingStatus: "processing",
-        userId: req.user!.id, // We can safely assert user existence since we check authentication
+        userId: (req.user as User).id,
       };
 
       const validatedData = insertDocumentSchema.parse(documentData);
@@ -116,13 +122,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Flashcards endpoints
-  app.get("/api/documents/:id/flashcards", async (req, res) => {
+  app.get("/api/documents/:id/flashcards", isAuthenticated, async (req, res) => {
     try {
       const documentId = parseInt(req.params.id);
       const document = await storage.getDocument(documentId);
       
       if (!document) {
         return res.status(404).json({ message: "Document not found" });
+      }
+      
+      // Verify document belongs to current user
+      if (document.userId !== (req.user as User).id) {
+        return res.status(403).json({ message: "Access denied" });
       }
       
       const flashcards = await storage.getFlashcardsByDocumentId(documentId);
@@ -133,13 +144,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Quizzes endpoints
-  app.get("/api/documents/:id/quizzes", async (req, res) => {
+  app.get("/api/documents/:id/quizzes", isAuthenticated, async (req, res) => {
     try {
       const documentId = parseInt(req.params.id);
       const document = await storage.getDocument(documentId);
       
       if (!document) {
         return res.status(404).json({ message: "Document not found" });
+      }
+      
+      // Verify document belongs to current user
+      if (document.userId !== (req.user as User).id) {
+        return res.status(403).json({ message: "Access denied" });
       }
       
       const quizzes = await storage.getQuizzesByDocumentId(documentId);
@@ -149,13 +165,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/documents/:id/quizzes", async (req, res) => {
+  app.post("/api/documents/:id/quizzes", isAuthenticated, async (req, res) => {
     try {
       const documentId = parseInt(req.params.id);
       const document = await storage.getDocument(documentId);
       
       if (!document) {
         return res.status(404).json({ message: "Document not found" });
+      }
+      
+      // Verify document belongs to current user
+      if (document.userId !== (req.user as User).id) {
+        return res.status(403).json({ message: "Access denied" });
       }
       
       const { type, difficulty, numQuestions } = req.body;
@@ -182,13 +203,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Summary endpoints
-  app.get("/api/documents/:id/summary", async (req, res) => {
+  app.get("/api/documents/:id/summary", isAuthenticated, async (req, res) => {
     try {
       const documentId = parseInt(req.params.id);
       const document = await storage.getDocument(documentId);
       
       if (!document) {
         return res.status(404).json({ message: "Document not found" });
+      }
+      
+      // Verify document belongs to current user
+      if (document.userId !== (req.user as User).id) {
+        return res.status(403).json({ message: "Access denied" });
       }
       
       const summary = await storage.getSummaryByDocumentId(documentId);

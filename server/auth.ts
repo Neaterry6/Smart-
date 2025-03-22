@@ -5,12 +5,24 @@ import session from "express-session";
 import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
 import { storage } from "./storage";
-import { User } from "@shared/schema";
+import { User as UserType } from "@shared/schema";
 import MemoryStore from "memorystore";
 
+// Define the Express.User interface to match our User type
 declare global {
   namespace Express {
-    interface User extends User {}
+    // Use a separate interface to avoid circular reference
+    interface User {
+      id: number;
+      username: string;
+      password: string | null;
+      email: string | null;
+      name: string | null;
+      image: string | null;
+      provider: string | null;
+      providerId: string | null;
+      createdAt: Date;
+    }
   }
 }
 
@@ -69,7 +81,7 @@ export function setupAuth(app: Express) {
     }),
   );
 
-  passport.serializeUser((user, done) => {
+  passport.serializeUser((user: Express.User, done) => {
     done(null, user.id);
   });
 
@@ -118,7 +130,7 @@ export function setupAuth(app: Express) {
   });
 
   app.post("/api/login", (req, res, next) => {
-    passport.authenticate("local", (err, user, info) => {
+    passport.authenticate("local", (err: Error | null, user: Express.User | false, info: { message: string } | undefined) => {
       if (err) return next(err);
       if (!user) {
         return res.status(401).json({ message: info?.message || "Invalid credentials" });
