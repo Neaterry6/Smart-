@@ -1,6 +1,6 @@
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
-import { Brain, LogOut, User, Upload, Book, History, Plus } from "lucide-react";
+import { Brain, LogOut, User, Upload, Book, History, Plus, CreditCard } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -79,6 +79,12 @@ export default function Header() {
           )}
         </div>
         <div className="flex items-center">
+          <Link href="/pricing">
+            <Button variant="ghost" className="flex items-center text-gray-300 hover:text-purple-400 mr-3">
+              <CreditCard className="mr-1 h-4 w-4" />
+              <span>Pricing</span>
+            </Button>
+          </Link>
           {user ? (
             <>
               <Link href="/upload">

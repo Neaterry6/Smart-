@@ -28,7 +28,20 @@ export default function UploadTab({ onUploadComplete }: UploadTabProps) {
     mutationFn: async (file: File) => {
       const formData = new FormData();
       formData.append("file", file);
-      return apiRequest.post("/api/documents/upload", formData);
+      
+      // Use regular fetch for FormData since apiRequest JSON-stringifies the body
+      const response = await fetch("/api/documents/upload", {
+        method: "POST",
+        body: formData,
+        credentials: "include"
+      });
+      
+      if (!response.ok) {
+        const text = (await response.text()) || response.statusText;
+        throw new Error(`${response.status}: ${text}`);
+      }
+      
+      return response.json();
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["/api/documents"] });

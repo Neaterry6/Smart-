@@ -8,6 +8,7 @@ import Upload from "@/pages/Upload";
 import Flashcards from "@/pages/Flashcards";
 import Quiz from "@/pages/Quiz";
 import Summary from "@/pages/Summary";
+import Pricing from "@/pages/Pricing";
 import AuthPage from "@/pages/auth-page";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -19,6 +20,7 @@ function Router() {
     <Switch>
       <Route path="/" component={Home} />
       <Route path="/auth" component={AuthPage} />
+      <Route path="/pricing" component={Pricing} />
       <ProtectedRoute path="/upload" component={Upload} />
       <ProtectedRoute path="/flashcards/:id" component={Flashcards} />
       <ProtectedRoute path="/quiz/:id" component={Quiz} />
