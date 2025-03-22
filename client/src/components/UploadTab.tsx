@@ -4,7 +4,7 @@ import { Document } from "@shared/schema";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { Upload, FileText, Check } from "lucide-react";
+import { Upload, FileText } from "lucide-react";
 import { useLocation } from "wouter";
 import { formatDistanceToNow } from "date-fns";
 
@@ -18,9 +18,9 @@ export default function UploadTab({ onUploadComplete }: UploadTabProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
-  const [location, navigate] = useLocation();
+  const [, navigate] = useLocation();
 
-  const { data: documents, isLoading } = useQuery<Document[]>({
+  const { data: documents } = useQuery<Document[]>({
     queryKey: ["/api/documents"],
   });
 
@@ -53,7 +53,7 @@ export default function UploadTab({ onUploadComplete }: UploadTabProps) {
       if (onUploadComplete) onUploadComplete();
       navigate(`/flashcards/${data.id}`); // Navigate after successful upload
     },
-    onError: (error) => {
+    onError: (error: any) => {
       console.error("Upload error:", error);
       toast({
         title: "Upload failed",
@@ -101,7 +101,9 @@ export default function UploadTab({ onUploadComplete }: UploadTabProps) {
     e.preventDefault();
     setIsDragging(false);
     const file = e.dataTransfer.files[0];
-    await handleFileUpload(file);
+    if (file) {
+      await handleFileUpload(file);
+    }
   };
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -124,9 +126,8 @@ export default function UploadTab({ onUploadComplete }: UploadTabProps) {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + " " + sizes[i];
   };
 
-
   const navigateToDocument = (documentId: number) => {
-    navigate(`/flashcards/${documentId}`);
+    navigate(`/document/${documentId}`);
   };
 
   return (

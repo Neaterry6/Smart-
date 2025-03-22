@@ -14,6 +14,12 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { AuthProvider } from "@/hooks/use-auth";
 import { ProtectedRoute } from "@/lib/protected-route";
+import DocumentPage from "@/pages/document-page";
+
+const DocumentRoute = () => {
+  // This component wraps DocumentPage to handle the route parameters
+  return <DocumentPage />;
+};
 
 function Router() {
   return (
@@ -22,6 +28,7 @@ function Router() {
       <Route path="/auth" component={AuthPage} />
       <Route path="/pricing" component={Pricing} />
       <ProtectedRoute path="/upload" component={Upload} />
+      <ProtectedRoute path="/document/:id" component={DocumentRoute} />
       <ProtectedRoute path="/flashcards/:id" component={Flashcards} />
       <ProtectedRoute path="/quiz/:id" component={Quiz} />
       <ProtectedRoute path="/summary/:id" component={Summary} />
@@ -34,7 +41,7 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <div className="min-h-screen flex flex-col bg-gray-900 text-white">
+        <div className="min-h-screen flex flex-col bg-gray-50 text-gray-900">
           <Header />
           <main className="flex-1">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
