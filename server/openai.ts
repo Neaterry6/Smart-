@@ -4,7 +4,10 @@ import { storage } from "./storage";
 import { PDFExtract, PDFExtractOptions } from "pdf.js-extract";
 import { InsertFlashcard, InsertQuiz, InsertSummary } from "@shared/schema";
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
+if (!process.env.GEMINI_API_KEY) {
+  throw new Error("GEMINI_API_KEY environment variable is not set");
+}
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 const model = genAI.getGenerativeModel({ model: "gemini-pro" });
 const pdfExtract = new PDFExtract();
 
@@ -77,7 +80,11 @@ async function generateSummary(text: string, documentId: number): Promise<Insert
 }
 
 export async function processDocument(filePath: string, documentId: number): Promise<void> {
+  console.log("Starting document processing with Gemini AI...");
   try {
+    if (!fs.existsSync(filePath)) {
+      throw new Error(`File not found: ${filePath}`);
+    }
     await storage.updateDocumentStatus(documentId, "processing");
     const text = await extractTextFromPDF(filePath);
 

@@ -89,7 +89,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/documents/upload", isAuthenticated, upload.single("file"), async (req, res) => {
+  app.post("/api/documents/upload", isAuthenticated, async (req, res) => {
+  try {
+    await upload.single("file")(req, res, async (err) => {
+      if (err) {
+        console.error("Upload error:", err);
+        return res.status(400).json({ message: err.message });
+      }
     try {
       // req.file is guaranteed to exist by multer middleware
       const file = req.file as Express.Multer.File;
