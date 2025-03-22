@@ -19,7 +19,7 @@ interface PaymentTabProps {
 
 export default function PaymentTab({ onPaymentComplete }: PaymentTabProps) {
   const [copied, setCopied] = useState(false);
-  const [, navigate] = useLocation();
+  const [, setLocation] = useLocation();
 
   // OPay account details
   const accountDetails = {
@@ -55,7 +55,7 @@ export default function PaymentTab({ onPaymentComplete }: PaymentTabProps) {
     if (onPaymentComplete) {
       onPaymentComplete();
     }
-    navigate("/upload");
+    setLocation("/upload");
   };
 
   return (
