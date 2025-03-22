@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { GitHub, Mail, Facebook } from "lucide-react";
+import { Github, Mail, Facebook } from "lucide-react";
 import { SiGoogle } from "react-icons/si";
 import { useToast } from "@/hooks/use-toast";
 
@@ -188,7 +188,7 @@ export default function AuthPage() {
                         Google
                       </Button>
                       <Button variant="outline" onClick={() => handleOAuthLogin("GitHub")} className="bg-gray-800 border-gray-700 hover:bg-gray-700">
-                        <GitHub className="h-4 w-4 mr-2" />
+                        <Github className="h-4 w-4 mr-2" />
                         GitHub
                       </Button>
                       <Button variant="outline" onClick={() => handleOAuthLogin("Facebook")} className="bg-gray-800 border-gray-700 hover:bg-gray-700">
@@ -277,7 +277,7 @@ export default function AuthPage() {
                         Google
                       </Button>
                       <Button variant="outline" onClick={() => handleOAuthLogin("GitHub")} className="bg-gray-800 border-gray-700 hover:bg-gray-700">
-                        <GitHub className="h-4 w-4 mr-2" />
+                        <Github className="h-4 w-4 mr-2" />
                         GitHub
                       </Button>
                       <Button variant="outline" onClick={() => handleOAuthLogin("Facebook")} className="bg-gray-800 border-gray-700 hover:bg-gray-700">

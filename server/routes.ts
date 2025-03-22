@@ -9,6 +9,7 @@ import { fileURLToPath } from "url";
 import { processDocument } from "./openai";
 import { z } from "zod";
 import { insertDocumentSchema } from "@shared/schema";
+import { setupAuth } from "./auth";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -46,10 +47,17 @@ const upload = multer({
 });
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Setup authentication
+  setupAuth(app);
   // Documents endpoints
   app.get("/api/documents", async (req, res) => {
     try {
-      const documents = await storage.getAllDocuments();
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+      
+      // Get only the current user's documents
+      const documents = await storage.getAllDocuments(req.user!.id);
       res.json(documents);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch documents" });
@@ -71,7 +79,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/documents/upload", upload.single("file"), async (req, res) => {
+  app.post("/api/documents/upload", (req, res, next) => {
+    // Check if user is authenticated
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "You must be logged in to upload documents" });
+    }
+    next();
+  }, upload.single("file"), async (req, res) => {
     try {
       if (!req.file) {
         return res.status(400).json({ message: "No file uploaded" });
@@ -82,6 +96,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         originalName: req.file.originalname,
         fileSize: req.file.size,
         processingStatus: "processing",
+        userId: req.user!.id, // We can safely assert user existence since we check authentication
       };
 
       const validatedData = insertDocumentSchema.parse(documentData);

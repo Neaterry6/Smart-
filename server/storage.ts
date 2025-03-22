@@ -70,7 +70,18 @@ export class MemStorage implements IStorage {
 
   async createUser(insertUser: InsertUser): Promise<User> {
     const id = this.userIdCounter++;
-    const user: User = { ...insertUser, id };
+    const createdAt = new Date();
+    const user: User = { 
+      ...insertUser, 
+      id,
+      createdAt,
+      password: insertUser.password || null,
+      email: insertUser.email || null,
+      name: insertUser.name || null,
+      image: insertUser.image || null,
+      provider: insertUser.provider || null,
+      providerId: insertUser.providerId || null
+    };
     this.users.set(id, user);
     return user;
   }
@@ -80,9 +91,16 @@ export class MemStorage implements IStorage {
     return this.documents.get(id);
   }
   
-  async getAllDocuments(): Promise<Document[]> {
-    return Array.from(this.documents.values()).sort((a, b) => {
-      // Sort by uploadDate in descending order (newest first)
+  async getAllDocuments(userId?: number): Promise<Document[]> {
+    let documents = Array.from(this.documents.values());
+    
+    // Filter by userId if provided
+    if (userId !== undefined) {
+      documents = documents.filter(doc => doc.userId === userId);
+    }
+    
+    // Sort by uploadDate in descending order (newest first)
+    return documents.sort((a, b) => {
       const dateA = new Date(a.uploadDate).getTime();
       const dateB = new Date(b.uploadDate).getTime();
       return dateB - dateA;
@@ -92,7 +110,12 @@ export class MemStorage implements IStorage {
   async createDocument(insertDocument: InsertDocument): Promise<Document> {
     const id = this.documentIdCounter++;
     const uploadDate = new Date();
-    const document: Document = { ...insertDocument, id, uploadDate };
+    const document: Document = { 
+      ...insertDocument, 
+      id, 
+      uploadDate,
+      processingStatus: insertDocument.processingStatus || "pending" 
+    };
     this.documents.set(id, document);
     return document;
   }
