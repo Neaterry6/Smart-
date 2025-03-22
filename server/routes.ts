@@ -203,7 +203,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Summary endpoints
-  app.get("/api/documents/:id/summary", isAuthenticated, async (req, res) => {
+  app.post("/api/chat", isAuthenticated, async (req, res) => {
+  try {
+    const { message } = req.body;
+    const result = await model.generateContent(message);
+    const response = await result.response;
+    res.json({ response: response.text() });
+  } catch (error) {
+    console.error("Chat error:", error);
+    res.status(500).json({ message: "Failed to process chat message" });
+  }
+});
+
+app.get("/api/documents/:id/summary", isAuthenticated, async (req, res) => {
     try {
       const documentId = parseInt(req.params.id);
       const document = await storage.getDocument(documentId);
