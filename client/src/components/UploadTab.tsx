@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Document } from "@shared/schema";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { apiRequest } from "@/lib/api";
+import { apiRequest } from "../lib/api";
 import { Upload, FileText, Check } from "lucide-react";
 import { useLocation } from "wouter";
 import { formatDistanceToNow } from "date-fns";
