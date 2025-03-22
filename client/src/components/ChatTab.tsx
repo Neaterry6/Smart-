@@ -46,25 +46,27 @@ export function ChatTab() {
     setIsLoading(true);
 
     try {
-      // In a real implementation, this would connect to your backend
-      // For now, we'll simulate a response
-      setTimeout(() => {
-        const randomResponses = [
-          "I've analyzed the document, and the key concepts include quantitative analysis, theoretical models, and empirical evidence.",
-          "Based on your document, I'd recommend focusing on these main points: 1) Methodology, 2) Results interpretation, and 3) Applications.",
-          "Let me help you understand this material better. The most important aspect is understanding how the theories connect to real-world applications.",
-          "Great question! The document discusses several approaches to problem-solving, with an emphasis on critical thinking and systematic analysis.",
-          "I've created a summary of the document. It covers the introduction to the topic, methodology used, key findings, and conclusions with implications for future research."
-        ];
-        
-        const responseIndex = Math.floor(Math.random() * randomResponses.length);
-        const assistantMessage: Message = {
-          role: 'assistant', 
-          content: randomResponses[responseIndex]
-        };
-        setMessages(prev => [...prev, assistantMessage]);
-        setIsLoading(false);
-      }, 1500);
+      // Connect to our backend chat API
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ message: input }),
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Request failed with status ${response.status}`);
+      }
+      
+      const data = await response.json();
+      
+      const assistantMessage: Message = {
+        role: 'assistant', 
+        content: data.response
+      };
+      
+      setMessages(prev => [...prev, assistantMessage]);
+      setIsLoading(false);
       
     } catch (error) {
       console.error('Chat error:', error);

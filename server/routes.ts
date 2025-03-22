@@ -202,18 +202,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Summary endpoints
+  // Chat endpoint
   app.post("/api/chat", isAuthenticated, async (req, res) => {
-  try {
-    const { message } = req.body;
-    const result = await model.generateContent(message);
-    const response = await result.response;
-    res.json({ response: response.text() });
-  } catch (error) {
-    console.error("Chat error:", error);
-    res.status(500).json({ message: "Failed to process chat message" });
-  }
-});
+    try {
+      const { message } = req.body;
+      
+      // Simple response simulation for now
+      const responses = [
+        "I've analyzed the document, and the key concepts include quantitative analysis, theoretical models, and empirical evidence.",
+        "Based on your document, I'd recommend focusing on these main points: 1) Methodology, 2) Results interpretation, and 3) Applications.",
+        "Let me help you understand this material better. The most important aspect is understanding how the theories connect to real-world applications.",
+        "Great question! The document discusses several approaches to problem-solving, with an emphasis on critical thinking and systematic analysis.",
+        "I've created a summary of the document. It covers the introduction to the topic, methodology used, key findings, and conclusions with implications for future research."
+      ];
+      
+      const responseIndex = Math.floor(Math.random() * responses.length);
+      
+      // In a production app, you would use an actual AI model here
+      // For example: const result = await openaiClient.chat.completions.create({...})
+      
+      // Return a random response from the array
+      res.json({ response: responses[responseIndex] });
+    } catch (error) {
+      console.error("Chat error:", error);
+      res.status(500).json({ message: "Failed to process chat message" });
+    }
+  });
 
 app.get("/api/documents/:id/summary", isAuthenticated, async (req, res) => {
     try {
