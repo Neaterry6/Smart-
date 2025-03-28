@@ -50,7 +50,27 @@ const upload = multer({
 });
 
 // Auth middleware
+// Flag to bypass authentication (for development only)
+const BYPASS_AUTH = true;
+
 const isAuthenticated = (req: Request, res: Response, next: NextFunction) => {
+  if (BYPASS_AUTH) {
+    // In bypass mode, we create a dummy user if not authenticated
+    if (!req.isAuthenticated()) {
+      (req as any).user = {
+        id: 1,
+        username: "test-user",
+        email: "test@example.com",
+        name: "Test User",
+        image: null,
+        provider: null,
+        providerId: null,
+        createdAt: new Date()
+      };
+    }
+    return next();
+  }
+  
   if (!req.isAuthenticated()) {
     return res.status(401).json({ message: "Not authenticated" });
   }

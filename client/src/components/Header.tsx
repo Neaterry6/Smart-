@@ -68,20 +68,24 @@ export default function Header() {
         </div>
         
         <div className="flex items-center">
-          <Link href="/pricing">
-            <Button variant="ghost" className="flex items-center text-gray-300 hover:text-purple-400 mr-3">
-              <CreditCard className="mr-1 h-4 w-4" />
-              <span>Pricing</span>
-            </Button>
-          </Link>
+          <Button 
+            variant="ghost" 
+            className="flex items-center text-gray-300 hover:text-purple-400 mr-3"
+            onClick={() => window.location.href = "/pricing"}
+          >
+            <CreditCard className="mr-1 h-4 w-4" />
+            <span>Pricing</span>
+          </Button>
           
           {isSignedIn && (
-            <Link href="/upload">
-              <Button variant="secondary" className="flex items-center bg-purple-600 hover:bg-purple-700 text-white mr-4">
-                <Plus className="mr-1 h-4 w-4" />
-                <span>New Upload</span>
-              </Button>
-            </Link>
+            <Button 
+              variant="secondary" 
+              className="flex items-center bg-purple-600 hover:bg-purple-700 text-white mr-4"
+              onClick={() => window.location.href = "/upload"}
+            >
+              <Plus className="mr-1 h-4 w-4" />
+              <span>New Upload</span>
+            </Button>
           )}
 
           <ClerkButtonGroup />
