@@ -14,9 +14,9 @@ import Dashboard from "@/pages/Dashboard";
 import AuthPage from "@/pages/auth-page";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import { AuthProvider } from "@/hooks/use-auth";
 import { ProtectedRoute } from "@/lib/protected-route";
 import DocumentPage from "@/pages/document-page";
+import ClerkProviderWrapper from "@/lib/clerk-provider";
 
 const DocumentRoute = () => {
   // This component wraps DocumentPage to handle the route parameters
@@ -44,7 +44,7 @@ function Router() {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
+      <ClerkProviderWrapper>
         <div className="min-h-screen flex flex-col bg-gray-50 text-gray-900">
           <Header />
           <main className="flex-1">
@@ -55,7 +55,7 @@ function App() {
           <Footer />
         </div>
         <Toaster />
-      </AuthProvider>
+      </ClerkProviderWrapper>
     </QueryClientProvider>
   );
 }

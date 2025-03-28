@@ -1,4 +1,4 @@
-import { useAuth } from "@/hooks/use-auth";
+import { useUser } from "@clerk/clerk-react";
 import { Loader2 } from "lucide-react";
 import { Redirect, Route } from "wouter";
 
@@ -9,9 +9,9 @@ export function ProtectedRoute({
   path: string;
   component: () => React.JSX.Element;
 }) {
-  const { user, isLoading } = useAuth();
+  const { isSignedIn, isLoaded } = useUser();
 
-  if (isLoading) {
+  if (!isLoaded) {
     return (
       <Route path={path}>
         <div className="flex items-center justify-center min-h-screen">
@@ -21,7 +21,7 @@ export function ProtectedRoute({
     );
   }
 
-  if (!user) {
+  if (!isSignedIn) {
     return (
       <Route path={path}>
         <Redirect to="/auth" />

@@ -1,26 +1,26 @@
 import { useEffect } from "react";
 import { useLocation } from "wouter";
-import { useAuth } from "@/hooks/use-auth";
+import { useUser } from "@clerk/clerk-react";
 import { Loader2 } from "lucide-react";
 
 export default function Home() {
   const [location, setLocation] = useLocation();
-  const { user, isLoading } = useAuth();
+  const { isSignedIn, isLoaded } = useUser();
 
   useEffect(() => {
-    if (!isLoading) {
+    if (isLoaded) {
       // If user is authenticated, redirect to upload page
       // Otherwise, redirect to auth page
-      if (user) {
+      if (isSignedIn) {
         setLocation("/upload");
       } else {
         setLocation("/auth");
       }
     }
-  }, [user, isLoading, setLocation]);
+  }, [isSignedIn, isLoaded, setLocation]);
 
   // Show loading spinner while checking auth status
-  if (isLoading) {
+  if (!isLoaded) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <Loader2 className="h-8 w-8 animate-spin text-purple-500" />

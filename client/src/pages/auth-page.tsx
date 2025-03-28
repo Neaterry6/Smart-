@@ -1,81 +1,29 @@
-import { useState } from "react";
-import { useAuth } from "@/hooks/use-auth";
+import { useEffect } from "react";
 import { useLocation } from "wouter";
-import { z } from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Github, Mail, Facebook } from "lucide-react";
-import { SiGoogle } from "react-icons/si";
-import { useToast } from "@/hooks/use-toast";
-
-const loginSchema = z.object({
-  username: z.string().min(3, "Username must be at least 3 characters"),
-  password: z.string().min(6, "Password must be at least 6 characters"),
-});
-
-const registerSchema = z.object({
-  username: z.string().min(3, "Username must be at least 3 characters"),
-  email: z.string().email("Please enter a valid email"),
-  password: z.string().min(6, "Password must be at least 6 characters"),
-  confirmPassword: z.string(),
-}).refine((data) => data.password === data.confirmPassword, {
-  message: "Passwords don't match",
-  path: ["confirmPassword"],
-});
+import { useUser } from "@clerk/clerk-react";
+import ClerkAuth from "@/components/ClerkAuth";
+import { Loader2 } from "lucide-react";
 
 export default function AuthPage() {
   const [location, navigate] = useLocation();
-  const { user, loginMutation, registerMutation } = useAuth();
-  const { toast } = useToast();
-  const [activeTab, setActiveTab] = useState("login");
+  const { isSignedIn, isLoaded } = useUser();
+  const searchParams = new URLSearchParams(location.split('?')[1] || '');
+  const mode = searchParams.get('mode') === 'signUp' ? 'signUp' : 'signIn';
   
-  // If user is already logged in, redirect to dashboard
-  if (user) {
-    navigate("/upload");
-    return null;
-  }
-  
-  const loginForm = useForm<z.infer<typeof loginSchema>>({
-    resolver: zodResolver(loginSchema),
-    defaultValues: {
-      username: "",
-      password: "",
-    },
-  });
-  
-  const registerForm = useForm<z.infer<typeof registerSchema>>({
-    resolver: zodResolver(registerSchema),
-    defaultValues: {
-      username: "",
-      email: "",
-      password: "",
-      confirmPassword: "",
-    },
-  });
-  
-  function onLoginSubmit(values: z.infer<typeof loginSchema>) {
-    loginMutation.mutate(values);
-  }
-  
-  function onRegisterSubmit(values: z.infer<typeof registerSchema>) {
-    registerMutation.mutate({
-      username: values.username,
-      email: values.email,
-      password: values.password,
-      provider: "local"
-    });
-  }
-  
-  function handleOAuthLogin(provider: string) {
-    toast({
-      title: `${provider} login coming soon`,
-      description: "This feature is currently under development. Please use email registration for now.",
-    });
+  useEffect(() => {
+    // If user is already logged in, redirect to upload page
+    if (isLoaded && isSignedIn) {
+      navigate("/upload");
+    }
+  }, [isSignedIn, isLoaded, navigate]);
+
+  // Show loading spinner while checking auth status
+  if (!isLoaded) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gradient-to-b from-gray-900 to-gray-800">
+        <Loader2 className="h-8 w-8 animate-spin text-purple-500" />
+      </div>
+    );
   }
 
   return (
@@ -122,179 +70,7 @@ export default function AuthPage() {
         
         {/* Auth Form */}
         <div className="order-1 md:order-2">
-          <Card className="border-gray-800 bg-gray-900/50 backdrop-blur-sm text-white shadow-xl">
-            <CardHeader>
-              <CardTitle className="text-2xl text-center">Welcome to StudyAI</CardTitle>
-              <CardDescription className="text-center text-gray-400">
-                Sign in to your account or create a new one
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                <TabsList className="grid w-full grid-cols-2 bg-gray-800">
-                  <TabsTrigger value="login">Login</TabsTrigger>
-                  <TabsTrigger value="register">Register</TabsTrigger>
-                </TabsList>
-                
-                {/* Login Form */}
-                <TabsContent value="login">
-                  <div className="space-y-4 py-2">
-                    <Form {...loginForm}>
-                      <form onSubmit={loginForm.handleSubmit(onLoginSubmit)} className="space-y-4">
-                        <FormField
-                          control={loginForm.control}
-                          name="username"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Username</FormLabel>
-                              <FormControl>
-                                <Input placeholder="Enter your username" className="bg-gray-800 border-gray-700" {...field} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        <FormField
-                          control={loginForm.control}
-                          name="password"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Password</FormLabel>
-                              <FormControl>
-                                <Input type="password" placeholder="••••••••" className="bg-gray-800 border-gray-700" {...field} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        <Button type="submit" className="w-full" disabled={loginMutation.isPending}>
-                          {loginMutation.isPending ? "Signing in..." : "Sign In"}
-                        </Button>
-                      </form>
-                    </Form>
-                    
-                    <div className="relative my-4">
-                      <div className="absolute inset-0 flex items-center">
-                        <span className="w-full border-t border-gray-700" />
-                      </div>
-                      <div className="relative flex justify-center text-xs">
-                        <span className="bg-gray-900 px-2 text-gray-400">Or continue with</span>
-                      </div>
-                    </div>
-                    
-                    <div className="grid grid-cols-3 gap-2">
-                      <Button variant="outline" onClick={() => handleOAuthLogin("Google")} className="bg-gray-800 border-gray-700 hover:bg-gray-700">
-                        <SiGoogle className="h-4 w-4 mr-2" />
-                        Google
-                      </Button>
-                      <Button variant="outline" onClick={() => handleOAuthLogin("GitHub")} className="bg-gray-800 border-gray-700 hover:bg-gray-700">
-                        <Github className="h-4 w-4 mr-2" />
-                        GitHub
-                      </Button>
-                      <Button variant="outline" onClick={() => handleOAuthLogin("Facebook")} className="bg-gray-800 border-gray-700 hover:bg-gray-700">
-                        <Facebook className="h-4 w-4 mr-2" />
-                        Facebook
-                      </Button>
-                    </div>
-                  </div>
-                </TabsContent>
-                
-                {/* Register Form */}
-                <TabsContent value="register">
-                  <div className="space-y-4 py-2">
-                    <Form {...registerForm}>
-                      <form onSubmit={registerForm.handleSubmit(onRegisterSubmit)} className="space-y-4">
-                        <FormField
-                          control={registerForm.control}
-                          name="username"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Username</FormLabel>
-                              <FormControl>
-                                <Input placeholder="Choose a username" className="bg-gray-800 border-gray-700" {...field} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        <FormField
-                          control={registerForm.control}
-                          name="email"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Email</FormLabel>
-                              <FormControl>
-                                <Input placeholder="Enter your email" className="bg-gray-800 border-gray-700" {...field} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        <FormField
-                          control={registerForm.control}
-                          name="password"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Password</FormLabel>
-                              <FormControl>
-                                <Input type="password" placeholder="Create a password" className="bg-gray-800 border-gray-700" {...field} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        <FormField
-                          control={registerForm.control}
-                          name="confirmPassword"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Confirm Password</FormLabel>
-                              <FormControl>
-                                <Input type="password" placeholder="Confirm your password" className="bg-gray-800 border-gray-700" {...field} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        <Button type="submit" className="w-full" disabled={registerMutation.isPending}>
-                          {registerMutation.isPending ? "Creating account..." : "Create Account"}
-                        </Button>
-                      </form>
-                    </Form>
-                    
-                    <div className="relative my-4">
-                      <div className="absolute inset-0 flex items-center">
-                        <span className="w-full border-t border-gray-700" />
-                      </div>
-                      <div className="relative flex justify-center text-xs">
-                        <span className="bg-gray-900 px-2 text-gray-400">Or continue with</span>
-                      </div>
-                    </div>
-                    
-                    <div className="grid grid-cols-3 gap-2">
-                      <Button variant="outline" onClick={() => handleOAuthLogin("Google")} className="bg-gray-800 border-gray-700 hover:bg-gray-700">
-                        <SiGoogle className="h-4 w-4 mr-2" />
-                        Google
-                      </Button>
-                      <Button variant="outline" onClick={() => handleOAuthLogin("GitHub")} className="bg-gray-800 border-gray-700 hover:bg-gray-700">
-                        <Github className="h-4 w-4 mr-2" />
-                        GitHub
-                      </Button>
-                      <Button variant="outline" onClick={() => handleOAuthLogin("Facebook")} className="bg-gray-800 border-gray-700 hover:bg-gray-700">
-                        <Facebook className="h-4 w-4 mr-2" />
-                        Facebook
-                      </Button>
-                    </div>
-                  </div>
-                </TabsContent>
-              </Tabs>
-            </CardContent>
-            <CardFooter className="flex justify-center border-t border-gray-800 pt-4">
-              <p className="text-xs text-gray-400">
-                By continuing, you agree to our Terms of Service and Privacy Policy
-              </p>
-            </CardFooter>
-          </Card>
+          <ClerkAuth mode={mode} />
         </div>
       </div>
     </div>
