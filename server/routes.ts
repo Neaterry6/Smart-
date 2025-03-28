@@ -213,8 +213,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Chat endpoint
-  app.post("/api/chat", isAuthenticated, async (req, res) => {
+  // Chat endpoint - publicly accessible
+  app.post("/api/chat", async (req, res) => {
     try {
       const { message } = req.body;
       

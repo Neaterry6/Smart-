@@ -28,12 +28,12 @@ function Router() {
       <Route path="/" component={Home} />
       <Route path="/auth" component={AuthPage} />
       <Route path="/pricing" component={Pricing} />
+      <Route path="/chat" component={Chat} />
       <ProtectedRoute path="/upload" component={Upload} />
       <ProtectedRoute path="/document/:id" component={DocumentRoute} />
       <ProtectedRoute path="/flashcards/:id" component={Flashcards} />
       <ProtectedRoute path="/quiz/:id" component={Quiz} />
       <ProtectedRoute path="/summary/:id" component={Summary} />
-      <ProtectedRoute path="/chat" component={Chat} />
       <Route component={NotFound} />
     </Switch>
   );
