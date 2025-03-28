@@ -13,6 +13,7 @@ import {
   User, UserStats, Badge, UserAchievement
 } from "@shared/schema";
 import { setupAuth } from "./auth";
+import spotifyService, { StudyMood, initializeSpotify } from "./spotify";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -503,6 +504,129 @@ app.get("/api/documents/:id/summary", isAuthenticated, async (req, res) => {
       });
     } catch (error) {
       res.status(500).json({ message: "Failed to track quiz completion" });
+    }
+  });
+
+  // Initialize Spotify API on server start
+  initializeSpotify().catch(error => {
+    console.error('Failed to initialize Spotify API:', error);
+  });
+
+  // Spotify API endpoints
+  
+  // Get playlists by study mood
+  app.get("/api/spotify/playlists/:mood", async (req, res) => {
+    try {
+      const mood = req.params.mood as StudyMood;
+      const limit = req.query.limit ? parseInt(req.query.limit as string) : 5;
+      
+      if (!['focus', 'relax', 'energize', 'ambient', 'classical'].includes(mood)) {
+        return res.status(400).json({ message: "Invalid mood. Choose from: focus, relax, energize, ambient, classical" });
+      }
+      
+      const playlists = await spotifyService.searchStudyPlaylists(mood, limit);
+      
+      res.json({
+        mood,
+        playlists: playlists.map(playlist => ({
+          id: playlist.id,
+          name: playlist.name,
+          description: playlist.description,
+          image: playlist.images && playlist.images.length > 0 ? playlist.images[0].url : null,
+          trackCount: playlist.tracks?.total || 0,
+          externalUrl: playlist.external_urls?.spotify || null,
+          owner: playlist.owner?.display_name || null
+        }))
+      });
+    } catch (error) {
+      console.error("Error fetching Spotify playlists:", error);
+      res.status(500).json({ message: "Failed to fetch Spotify playlists" });
+    }
+  });
+  
+  // Get playlist details with tracks
+  app.get("/api/spotify/playlist/:id", async (req, res) => {
+    try {
+      const playlistId = req.params.id;
+      const limit = req.query.limit ? parseInt(req.query.limit as string) : 20;
+      
+      const playlistDetails = await spotifyService.getPlaylistDetails(playlistId);
+      const tracks = await spotifyService.getPlaylistTracks(playlistId, limit);
+      
+      // Format the response
+      const playlist = {
+        id: playlistDetails.id,
+        name: playlistDetails.name,
+        description: playlistDetails.description,
+        image: playlistDetails.images && playlistDetails.images.length > 0 
+          ? playlistDetails.images[0].url 
+          : null,
+        trackCount: playlistDetails.tracks?.total || 0,
+        externalUrl: playlistDetails.external_urls?.spotify || null,
+        owner: playlistDetails.owner?.display_name || null,
+        tracks: tracks.map(item => ({
+          id: item.track.id,
+          name: item.track.name,
+          artists: item.track.artists.map(artist => artist.name).join(', '),
+          album: item.track.album.name,
+          duration: item.track.duration_ms,
+          previewUrl: item.track.preview_url,
+          externalUrl: item.track.external_urls?.spotify || null,
+          image: item.track.album.images && item.track.album.images.length > 0 
+            ? item.track.album.images[0].url 
+            : null
+        }))
+      };
+      
+      res.json(playlist);
+    } catch (error) {
+      console.error("Error fetching Spotify playlist details:", error);
+      res.status(500).json({ message: "Failed to fetch Spotify playlist details" });
+    }
+  });
+  
+  // Get recommendations based on study subject and mood
+  app.get("/api/spotify/recommendations", async (req, res) => {
+    try {
+      const { subject, mood } = req.query;
+      const limit = req.query.limit ? parseInt(req.query.limit as string) : 10;
+      
+      if (!subject || typeof subject !== 'string') {
+        return res.status(400).json({ message: "Missing or invalid 'subject' parameter" });
+      }
+      
+      if (!mood || !['focus', 'relax', 'energize', 'ambient', 'classical'].includes(mood as string)) {
+        return res.status(400).json({ message: "Invalid mood. Choose from: focus, relax, energize, ambient, classical" });
+      }
+      
+      const recommendations = await spotifyService.getStudyPlaylistRecommendations(
+        subject as string,
+        mood as StudyMood,
+        limit
+      );
+      
+      // Format the response
+      const tracks = recommendations.map(track => ({
+        id: track.id,
+        name: track.name,
+        artists: track.artists.map(artist => artist.name).join(', '),
+        album: track.album.name,
+        duration: track.duration_ms,
+        previewUrl: track.preview_url,
+        externalUrl: track.external_urls?.spotify || null,
+        image: track.album.images && track.album.images.length > 0 
+          ? track.album.images[0].url 
+          : null
+      }));
+      
+      res.json({
+        subject,
+        mood,
+        tracks
+      });
+    } catch (error) {
+      console.error("Error fetching Spotify recommendations:", error);
+      res.status(500).json({ message: "Failed to fetch Spotify recommendations" });
     }
   });
 

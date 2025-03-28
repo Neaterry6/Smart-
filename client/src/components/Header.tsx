@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { 
   Brain, Upload, Book, History, Plus, 
   CreditCard, MessageSquare, BarChart, Award,
-  LogIn, LogOut
+  LogIn, LogOut, Music
 } from "lucide-react";
 import { useUser, useSignIn, useSignOut } from "@/lib/simple-auth-provider";
 
@@ -38,6 +38,17 @@ export default function Header() {
                 }`}>
                   <MessageSquare className="inline-block mr-1 h-4 w-4" />
                   <span>AI Chat</span>
+                </div>
+              </Link>
+              
+              <Link href="/music">
+                <div className={`px-3 py-2 rounded-md text-sm font-medium cursor-pointer ${
+                  location === "/music" 
+                    ? "text-purple-400 bg-gray-800" 
+                    : "text-gray-300 hover:bg-gray-800 hover:text-purple-400"
+                }`}>
+                  <Music className="inline-block mr-1 h-4 w-4" />
+                  <span>Study Music</span>
                 </div>
               </Link>
               
