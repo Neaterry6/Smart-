@@ -2,7 +2,7 @@ import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { 
   Brain, LogOut, User, Upload, Book, History, Plus, 
-  CreditCard, MessageSquare, BarChart, Award, ActivitySquare 
+  CreditCard, MessageSquare, BarChart, Award
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -44,53 +44,57 @@ export default function Header() {
               <span className="font-bold text-xl tracking-tight">StudyAI</span>
             </div>
           </Link>
-          {user && (
-            <div className="ml-10 hidden md:block">
-              <div className="flex space-x-4">
-                <Link href="/dashboard">
-                  <a className={`px-3 py-2 rounded-md text-sm font-medium ${
-                    location === "/dashboard" 
-                      ? "text-purple-400 bg-gray-800" 
-                      : "text-gray-300 hover:bg-gray-800 hover:text-purple-400"
-                  }`}>
-                    <BarChart className="inline-block mr-1 h-4 w-4" />
-                    <span>Dashboard</span>
-                  </a>
-                </Link>
-                <Link href="/upload">
-                  <a className={`px-3 py-2 rounded-md text-sm font-medium ${
-                    location.includes("/documents") 
-                      ? "text-purple-400 bg-gray-800" 
-                      : "text-gray-300 hover:bg-gray-800 hover:text-purple-400"
-                  }`}>
-                    <Book className="inline-block mr-1 h-4 w-4" />
-                    <span>My Documents</span>
-                  </a>
-                </Link>
-                <Link href="/upload">
-                  <a className={`px-3 py-2 rounded-md text-sm font-medium ${
-                    location.includes("/history") 
-                      ? "text-purple-400 bg-gray-800" 
-                      : "text-gray-300 hover:bg-gray-800 hover:text-purple-400"
-                  }`}>
-                    <History className="inline-block mr-1 h-4 w-4" />
-                    <span>Study History</span>
-                  </a>
-                </Link>
-                <Link href="/chat">
-                  <a className={`px-3 py-2 rounded-md text-sm font-medium ${
-                    location === "/chat" 
-                      ? "text-purple-400 bg-gray-800" 
-                      : "text-gray-300 hover:bg-gray-800 hover:text-purple-400"
-                  }`}>
-                    <MessageSquare className="inline-block mr-1 h-4 w-4" />
-                    <span>AI Chat</span>
-                  </a>
-                </Link>
-              </div>
+          <div className="ml-10 hidden md:block">
+            <div className="flex space-x-4">
+              <Link href="/chat">
+                <div className={`px-3 py-2 rounded-md text-sm font-medium cursor-pointer ${
+                  location === "/chat" 
+                    ? "text-purple-400 bg-gray-800" 
+                    : "text-gray-300 hover:bg-gray-800 hover:text-purple-400"
+                }`}>
+                  <MessageSquare className="inline-block mr-1 h-4 w-4" />
+                  <span>AI Chat</span>
+                </div>
+              </Link>
+              
+              {user && (
+                <>
+                  <Link href="/dashboard">
+                    <div className={`px-3 py-2 rounded-md text-sm font-medium cursor-pointer ${
+                      location === "/dashboard" 
+                        ? "text-purple-400 bg-gray-800" 
+                        : "text-gray-300 hover:bg-gray-800 hover:text-purple-400"
+                    }`}>
+                      <BarChart className="inline-block mr-1 h-4 w-4" />
+                      <span>Dashboard</span>
+                    </div>
+                  </Link>
+                  <Link href="/upload">
+                    <div className={`px-3 py-2 rounded-md text-sm font-medium cursor-pointer ${
+                      location.includes("/documents") 
+                        ? "text-purple-400 bg-gray-800" 
+                        : "text-gray-300 hover:bg-gray-800 hover:text-purple-400"
+                    }`}>
+                      <Book className="inline-block mr-1 h-4 w-4" />
+                      <span>My Documents</span>
+                    </div>
+                  </Link>
+                  <Link href="/upload">
+                    <div className={`px-3 py-2 rounded-md text-sm font-medium cursor-pointer ${
+                      location.includes("/history") 
+                        ? "text-purple-400 bg-gray-800" 
+                        : "text-gray-300 hover:bg-gray-800 hover:text-purple-400"
+                    }`}>
+                      <History className="inline-block mr-1 h-4 w-4" />
+                      <span>Study History</span>
+                    </div>
+                  </Link>
+                </>
+              )}
             </div>
-          )}
+          </div>
         </div>
+        
         <div className="flex items-center">
           <Link href="/pricing">
             <Button variant="ghost" className="flex items-center text-gray-300 hover:text-purple-400 mr-3">
@@ -98,6 +102,7 @@ export default function Header() {
               <span>Pricing</span>
             </Button>
           </Link>
+          
           {user ? (
             <>
               <Link href="/upload">
