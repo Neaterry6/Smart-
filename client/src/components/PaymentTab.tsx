@@ -9,9 +9,14 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Check, Copy } from "lucide-react";
+import { Check, Copy, ChevronDown, Gift } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 
 interface PaymentTabProps {
   onPaymentComplete?: () => void;
@@ -19,6 +24,7 @@ interface PaymentTabProps {
 
 export default function PaymentTab({ onPaymentComplete }: PaymentTabProps) {
   const [copied, setCopied] = useState(false);
+  const [isGiftOpen, setIsGiftOpen] = useState(false);
   const [, setLocation] = useLocation();
 
   // OPay account details
@@ -56,6 +62,16 @@ export default function PaymentTab({ onPaymentComplete }: PaymentTabProps) {
       onPaymentComplete();
     }
     setLocation("/upload");
+  };
+  
+  const handleGiftToggle = () => {
+    setIsGiftOpen(!isGiftOpen);
+    if (!isGiftOpen) {
+      toast({
+        title: "Thank You!",
+        description: "Your support is greatly appreciated!",
+      });
+    }
   };
 
   return (
@@ -176,6 +192,67 @@ export default function PaymentTab({ onPaymentComplete }: PaymentTabProps) {
             </Button>
           </CardFooter>
         </Card>
+      </div>
+
+      {/* Gift the Creator Section */}
+      <div className="mt-10 border-t pt-8">
+        <Collapsible
+          open={isGiftOpen}
+          onOpenChange={setIsGiftOpen}
+          className="w-full mx-auto max-w-md border rounded-lg overflow-hidden"
+        >
+          <div className="bg-gradient-to-r from-purple-100 to-pink-100 p-4">
+            <CollapsibleTrigger asChild>
+              <Button
+                variant="ghost"
+                className="flex items-center justify-between w-full bg-white/80 hover:bg-white/90 rounded-md p-3"
+                onClick={handleGiftToggle}
+              >
+                <div className="flex items-center space-x-2">
+                  <Gift className="h-5 w-5 text-pink-500" />
+                  <span className="font-medium">Gift the Creator</span>
+                </div>
+                <ChevronDown
+                  className={`h-4 w-4 transition-transform ${isGiftOpen ? "transform rotate-180" : ""}`}
+                />
+              </Button>
+            </CollapsibleTrigger>
+          </div>
+          
+          <CollapsibleContent>
+            <div className="p-4 bg-white">
+              <p className="text-sm text-gray-700 mb-4">
+                Your generous gift helps keep this app free for everyone. It's not mandatory, but it's greatly appreciated!
+              </p>
+              
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <h3 className="font-medium text-sm mb-2">Send your gift to:</h3>
+                <div className="flex justify-between items-center mb-2">
+                  <div className="text-sm">Bank:</div>
+                  <div className="font-medium">{accountDetails.bank}</div>
+                </div>
+                <div className="flex justify-between items-center mb-2">
+                  <div className="text-sm">Account Name:</div>
+                  <div className="font-medium">{accountDetails.accountName}</div>
+                </div>
+                <div className="flex justify-between items-center">
+                  <div className="text-sm">Account Number:</div>
+                  <div className="font-medium flex items-center">
+                    {accountDetails.accountNumber}
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="ml-2 h-8 w-8 p-0"
+                      onClick={() => copyToClipboard(accountDetails.accountNumber)}
+                    >
+                      {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </CollapsibleContent>
+        </Collapsible>
       </div>
 
       <div className="mt-10 text-center">
