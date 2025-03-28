@@ -16,7 +16,8 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { ProtectedRoute } from "@/lib/protected-route";
 import DocumentPage from "@/pages/document-page";
-import ClerkProviderWrapper from "@/lib/clerk-provider";
+// Import our simple auth provider instead of Clerk
+import { SimpleAuthProvider } from "@/lib/simple-auth-provider";
 
 const DocumentRoute = () => {
   // This component wraps DocumentPage to handle the route parameters
@@ -44,7 +45,7 @@ function Router() {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <ClerkProviderWrapper>
+      <SimpleAuthProvider>
         <div className="min-h-screen flex flex-col bg-gray-50 text-gray-900">
           <Header />
           <main className="flex-1">
@@ -55,7 +56,7 @@ function App() {
           <Footer />
         </div>
         <Toaster />
-      </ClerkProviderWrapper>
+      </SimpleAuthProvider>
     </QueryClientProvider>
   );
 }

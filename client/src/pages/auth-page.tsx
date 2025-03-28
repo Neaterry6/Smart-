@@ -1,12 +1,15 @@
 import { useEffect } from "react";
 import { useLocation } from "wouter";
-import { useUser } from "@clerk/clerk-react";
-import ClerkAuth from "@/components/ClerkAuth";
+import { useUser, useSignIn } from "@/lib/simple-auth-provider";
 import { Loader2 } from "lucide-react";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { LogIn, UserPlus } from "lucide-react";
 
 export default function AuthPage() {
   const [location, navigate] = useLocation();
   const { isSignedIn, isLoaded } = useUser();
+  const { signIn } = useSignIn();
   const searchParams = new URLSearchParams(location.split('?')[1] || '');
   const mode = searchParams.get('mode') === 'signUp' ? 'signUp' : 'signIn';
   
@@ -25,6 +28,12 @@ export default function AuthPage() {
       </div>
     );
   }
+
+  // Simple sign in handler
+  const handleSignIn = () => {
+    signIn();
+    navigate("/upload");
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-900 to-gray-800 flex flex-col items-center justify-center p-4 sm:p-6">
@@ -70,7 +79,47 @@ export default function AuthPage() {
         
         {/* Auth Form */}
         <div className="order-1 md:order-2">
-          <ClerkAuth mode={mode} />
+          <Card className="bg-gray-800 border-gray-700 text-white">
+            <CardHeader>
+              <CardTitle className="text-2xl text-center">
+                {mode === 'signUp' ? 'Create an Account' : 'Sign In to Your Account'}
+              </CardTitle>
+              <CardDescription className="text-center text-gray-400">
+                {mode === 'signUp' 
+                  ? 'Join StudyAI and supercharge your learning' 
+                  : 'Welcome back to StudyAI Companion'}
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <p className="text-center text-gray-400 py-4">
+                Click the button below to access the application in development mode.
+                No actual authentication is needed in this simplified version.
+              </p>
+              
+              <Button 
+                className="w-full bg-purple-600 hover:bg-purple-700" 
+                onClick={handleSignIn}
+              >
+                {mode === 'signUp' 
+                  ? <><UserPlus className="mr-2 h-4 w-4" /> Create Account</>
+                  : <><LogIn className="mr-2 h-4 w-4" /> Sign In</>
+                }
+              </Button>
+            </CardContent>
+            <CardFooter className="flex justify-center">
+              <p className="text-sm text-gray-400">
+                {mode === 'signUp' 
+                  ? 'Already have an account?' 
+                  : "Don't have an account?"
+                } <a 
+                    href={mode === 'signUp' ? '/auth' : '/auth?mode=signUp'} 
+                    className="text-purple-400 hover:underline"
+                  >
+                    {mode === 'signUp' ? 'Sign In' : 'Sign Up'}
+                  </a>
+              </p>
+            </CardFooter>
+          </Card>
         </div>
       </div>
     </div>

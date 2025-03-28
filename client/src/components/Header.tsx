@@ -2,14 +2,16 @@ import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { 
   Brain, Upload, Book, History, Plus, 
-  CreditCard, MessageSquare, BarChart, Award
+  CreditCard, MessageSquare, BarChart, Award,
+  LogIn, LogOut
 } from "lucide-react";
-import { useUser } from "@clerk/clerk-react";
-import ClerkButtonGroup from "./ClerkButtonGroup";
+import { useUser, useSignIn, useSignOut } from "@/lib/simple-auth-provider";
 
 export default function Header() {
   const [location] = useLocation();
   const { isSignedIn, isLoaded } = useUser();
+  const { signIn } = useSignIn();
+  const { signOut } = useSignOut();
   
   // Show no header when on auth page
   if (location === "/auth") {
@@ -88,7 +90,26 @@ export default function Header() {
             </Button>
           )}
 
-          <ClerkButtonGroup />
+          {/* Auth buttons */}
+          {isSignedIn ? (
+            <Button 
+              variant="outline" 
+              className="flex items-center text-white"
+              onClick={() => signOut()}
+            >
+              <LogOut className="mr-1 h-4 w-4" />
+              <span>Sign Out</span>
+            </Button>
+          ) : (
+            <Button 
+              variant="outline" 
+              className="flex items-center text-white"
+              onClick={() => signIn()}
+            >
+              <LogIn className="mr-1 h-4 w-4" />
+              <span>Sign In</span>
+            </Button>
+          )}
         </div>
       </div>
     </header>
