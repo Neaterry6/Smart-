@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
 
 interface Message {
@@ -12,7 +12,6 @@ interface Message {
 }
 
 export function ChatTab() {
-  const { toast } = useToast();
   const initialMessage: Message = { 
     role: 'assistant', 
     content: 'Hello! I\'m your AI study buddy. How can I help you with your learning today?'
