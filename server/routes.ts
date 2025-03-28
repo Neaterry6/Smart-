@@ -526,12 +526,20 @@ app.get("/api/documents/:id/summary", isAuthenticated, async (req, res) => {
       
       const playlists = await spotifyService.searchStudyPlaylists(mood, limit);
       
+      // Add additional logging to debug the response
+      console.log(`Received ${playlists?.length || 0} playlists from Spotify API`);
+      
+      // Filter out any null or undefined playlists and validate each playlist has required properties
+      const validPlaylists = (playlists || []).filter(playlist => 
+        playlist && playlist.id && playlist.name
+      );
+      
       res.json({
         mood,
-        playlists: playlists.map(playlist => ({
+        playlists: validPlaylists.map(playlist => ({
           id: playlist.id,
           name: playlist.name,
-          description: playlist.description,
+          description: playlist.description || '',
           image: playlist.images && playlist.images.length > 0 ? playlist.images[0].url : null,
           trackCount: playlist.tracks?.total || 0,
           externalUrl: playlist.external_urls?.spotify || null,
@@ -551,28 +559,43 @@ app.get("/api/documents/:id/summary", isAuthenticated, async (req, res) => {
       const limit = req.query.limit ? parseInt(req.query.limit as string) : 20;
       
       const playlistDetails = await spotifyService.getPlaylistDetails(playlistId);
+      
+      // Add validation for playlistDetails
+      if (!playlistDetails || !playlistDetails.id) {
+        return res.status(404).json({ message: "Playlist not found or invalid response from Spotify API" });
+      }
+      
       const tracks = await spotifyService.getPlaylistTracks(playlistId, limit);
+      
+      // Filter out any invalid tracks
+      const validTracks = (tracks || []).filter(item => 
+        item && item.track && item.track.id && item.track.name
+      );
+      
+      console.log(`Received ${validTracks.length} valid tracks from Spotify API for playlist ${playlistId}`);
       
       // Format the response
       const playlist = {
         id: playlistDetails.id,
-        name: playlistDetails.name,
-        description: playlistDetails.description,
+        name: playlistDetails.name || 'Unknown Playlist',
+        description: playlistDetails.description || '',
         image: playlistDetails.images && playlistDetails.images.length > 0 
           ? playlistDetails.images[0].url 
           : null,
         trackCount: playlistDetails.tracks?.total || 0,
         externalUrl: playlistDetails.external_urls?.spotify || null,
         owner: playlistDetails.owner?.display_name || null,
-        tracks: tracks.map(item => ({
+        tracks: validTracks.map(item => ({
           id: item.track.id,
           name: item.track.name,
-          artists: item.track.artists.map(artist => artist.name).join(', '),
-          album: item.track.album.name,
-          duration: item.track.duration_ms,
+          artists: item.track.artists && Array.isArray(item.track.artists) 
+            ? item.track.artists.map((artist: any) => artist.name || 'Unknown Artist').join(', ')
+            : 'Unknown Artist',
+          album: item.track.album?.name || 'Unknown Album',
+          duration: item.track.duration_ms || 0,
           previewUrl: item.track.preview_url,
           externalUrl: item.track.external_urls?.spotify || null,
-          image: item.track.album.images && item.track.album.images.length > 0 
+          image: item.track.album?.images && item.track.album.images.length > 0 
             ? item.track.album.images[0].url 
             : null
         }))
@@ -605,16 +628,25 @@ app.get("/api/documents/:id/summary", isAuthenticated, async (req, res) => {
         limit
       );
       
+      console.log(`Received ${recommendations?.length || 0} track recommendations from Spotify API`);
+      
+      // Filter out invalid recommendations
+      const validRecommendations = (recommendations || []).filter(track => 
+        track && track.id && track.name
+      );
+      
       // Format the response
-      const tracks = recommendations.map(track => ({
+      const tracks = validRecommendations.map(track => ({
         id: track.id,
         name: track.name,
-        artists: track.artists.map(artist => artist.name).join(', '),
-        album: track.album.name,
-        duration: track.duration_ms,
+        artists: track.artists && Array.isArray(track.artists)
+          ? track.artists.map((artist: any) => artist.name || 'Unknown Artist').join(', ')
+          : 'Unknown Artist',
+        album: track.album?.name || 'Unknown Album',
+        duration: track.duration_ms || 0,
         previewUrl: track.preview_url,
         externalUrl: track.external_urls?.spotify || null,
-        image: track.album.images && track.album.images.length > 0 
+        image: track.album?.images && track.album.images.length > 0 
           ? track.album.images[0].url 
           : null
       }));
