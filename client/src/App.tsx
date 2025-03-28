@@ -10,6 +10,7 @@ import Quiz from "@/pages/Quiz";
 import Summary from "@/pages/Summary";
 import Pricing from "@/pages/Pricing";
 import Chat from "@/pages/Chat";
+import Dashboard from "@/pages/Dashboard";
 import AuthPage from "@/pages/auth-page";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -29,6 +30,7 @@ function Router() {
       <Route path="/auth" component={AuthPage} />
       <Route path="/pricing" component={Pricing} />
       <Route path="/chat" component={Chat} />
+      <ProtectedRoute path="/dashboard" component={Dashboard} />
       <ProtectedRoute path="/upload" component={Upload} />
       <ProtectedRoute path="/document/:id" component={DocumentRoute} />
       <ProtectedRoute path="/flashcards/:id" component={Flashcards} />

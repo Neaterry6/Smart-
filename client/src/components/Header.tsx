@@ -1,6 +1,9 @@
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
-import { Brain, LogOut, User, Upload, Book, History, Plus, CreditCard, MessageSquare } from "lucide-react";
+import { 
+  Brain, LogOut, User, Upload, Book, History, Plus, 
+  CreditCard, MessageSquare, BarChart, Award, ActivitySquare 
+} from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -44,13 +47,13 @@ export default function Header() {
           {user && (
             <div className="ml-10 hidden md:block">
               <div className="flex space-x-4">
-                <Link href="/upload">
+                <Link href="/dashboard">
                   <a className={`px-3 py-2 rounded-md text-sm font-medium ${
-                    location === "/upload" 
+                    location === "/dashboard" 
                       ? "text-purple-400 bg-gray-800" 
                       : "text-gray-300 hover:bg-gray-800 hover:text-purple-400"
                   }`}>
-                    <Upload className="inline-block mr-1 h-4 w-4" />
+                    <BarChart className="inline-block mr-1 h-4 w-4" />
                     <span>Dashboard</span>
                   </a>
                 </Link>
@@ -117,6 +120,12 @@ export default function Header() {
                       {user.email && <div className="text-xs text-gray-400">{user.email}</div>}
                     </DropdownMenuLabel>
                     <DropdownMenuSeparator className="bg-gray-800" />
+                    <Link href="/dashboard">
+                      <DropdownMenuItem className="hover:bg-gray-800 cursor-pointer">
+                        <Award className="mr-2 h-4 w-4" />
+                        <span>Learning Dashboard</span>
+                      </DropdownMenuItem>
+                    </Link>
                     <DropdownMenuItem className="hover:bg-gray-800 cursor-pointer">
                       <User className="mr-2 h-4 w-4" />
                       <span>Profile</span>

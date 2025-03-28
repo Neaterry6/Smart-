@@ -74,7 +74,7 @@ export default function AuthPage() {
   function handleOAuthLogin(provider: string) {
     toast({
       title: `${provider} login coming soon`,
-      description: "This feature is currently under development",
+      description: "This feature is currently under development. Please use email registration for now.",
     });
   }
 

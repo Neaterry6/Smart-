@@ -8,7 +8,10 @@ import { dirname } from "path";
 import { fileURLToPath } from "url";
 import { processDocument, generateChatResponse } from "./openai";
 import { z } from "zod";
-import { insertDocumentSchema, User } from "@shared/schema";
+import { 
+  insertDocumentSchema, insertUserStatsSchema, 
+  User, UserStats, Badge, UserAchievement
+} from "@shared/schema";
 import { setupAuth } from "./auth";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -253,6 +256,233 @@ app.get("/api/documents/:id/summary", isAuthenticated, async (req, res) => {
       res.json(summary);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch summary" });
+    }
+  });
+
+  // Dashboard and achievement system endpoints
+  app.get("/api/dashboard", isAuthenticated, async (req, res) => {
+    try {
+      const userId = (req.user as User).id;
+      
+      // Get user statistics
+      let userStats = await storage.getUserStats(userId);
+      
+      // Create user stats if they don't exist yet
+      if (!userStats) {
+        userStats = await storage.createUserStats({
+          userId,
+          documentsUploaded: 0,
+          flashcardsCreated: 0,
+          flashcardsReviewed: 0,
+          quizzesCompleted: 0,
+          quizQuestionsAnswered: 0,
+          correctAnswers: 0,
+          totalStudyTime: 0
+        });
+      }
+      
+      // Get user documents (most recent first)
+      const documents = await storage.getAllDocuments(userId);
+      
+      // Get user achievements
+      const achievements = await storage.getUserAchievements(userId);
+      
+      // Get badge details for each achievement
+      const achievementDetails = await Promise.all(
+        achievements.map(async (achievement) => {
+          const badge = await storage.getBadge(achievement.badgeId);
+          return {
+            ...achievement,
+            badge
+          };
+        })
+      );
+      
+      // Build the dashboard response
+      const dashboardData = {
+        stats: userStats,
+        recentDocuments: documents.slice(0, 5), // Only take the 5 most recent
+        achievements: achievementDetails,
+        documentsCount: documents.length
+      };
+      
+      res.json(dashboardData);
+    } catch (error) {
+      console.error("Dashboard error:", error);
+      res.status(500).json({ message: "Failed to fetch dashboard data" });
+    }
+  });
+  
+  // Get all available badges
+  app.get("/api/badges", isAuthenticated, async (req, res) => {
+    try {
+      const badges = await storage.getBadges();
+      res.json(badges);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch badges" });
+    }
+  });
+  
+  // Get badges by category
+  app.get("/api/badges/category/:category", isAuthenticated, async (req, res) => {
+    try {
+      const category = req.params.category;
+      const badges = await storage.getBadgesByCategory(category);
+      res.json(badges);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch badges" });
+    }
+  });
+  
+  // Get user achievements
+  app.get("/api/achievements", isAuthenticated, async (req, res) => {
+    try {
+      const userId = (req.user as User).id;
+      const achievements = await storage.getUserAchievements(userId);
+      
+      // Get badge details for each achievement
+      const achievementDetails = await Promise.all(
+        achievements.map(async (achievement) => {
+          const badge = await storage.getBadge(achievement.badgeId);
+          return {
+            ...achievement,
+            badge
+          };
+        })
+      );
+      
+      res.json(achievementDetails);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch achievements" });
+    }
+  });
+  
+  // Update user stat
+  app.post("/api/stats/update", isAuthenticated, async (req, res) => {
+    try {
+      const userId = (req.user as User).id;
+      const { statName, value, increment } = req.body;
+      
+      if (!statName) {
+        return res.status(400).json({ message: "Missing statName parameter" });
+      }
+      
+      let updatedStats;
+      
+      if (increment) {
+        // Increment the stat by the specified value
+        updatedStats = await storage.incrementUserStat(
+          userId, 
+          statName as keyof UserStats, 
+          typeof value === 'number' ? value : 1
+        );
+      } else {
+        // Set the stat to the specified value
+        const updates: Partial<UserStats> = {};
+        updates[statName as keyof UserStats] = value;
+        updatedStats = await storage.updateUserStats(userId, updates);
+      }
+      
+      // Check and award any new badges based on the updated stats
+      const newAchievements = await storage.checkAndAwardBadges(userId);
+      
+      res.json({
+        stats: updatedStats,
+        newAchievements: newAchievements.length > 0 ? newAchievements : null
+      });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to update stats" });
+    }
+  });
+  
+  // Record study time
+  app.post("/api/stats/study-time", isAuthenticated, async (req, res) => {
+    try {
+      const userId = (req.user as User).id;
+      const { minutes } = req.body;
+      
+      if (typeof minutes !== 'number' || minutes <= 0) {
+        return res.status(400).json({ message: "Invalid study time" });
+      }
+      
+      // Update the total study time
+      const updatedStats = await storage.incrementUserStat(
+        userId,
+        'totalStudyTime',
+        minutes
+      );
+      
+      // Check and award any new badges based on the updated stats
+      const newAchievements = await storage.checkAndAwardBadges(userId);
+      
+      res.json({
+        stats: updatedStats,
+        newAchievements: newAchievements.length > 0 ? newAchievements : null
+      });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to record study time" });
+    }
+  });
+
+  // Callback functions to track user activity and update stats
+  const trackDocumentUpload = async (userId: number) => {
+    await storage.incrementUserStat(userId, 'documentsUploaded');
+  };
+  
+  const trackFlashcardReview = async (userId: number, count: number = 1) => {
+    await storage.incrementUserStat(userId, 'flashcardsReviewed', count);
+  };
+  
+  const trackQuizCompletion = async (userId: number, correct: number, total: number) => {
+    await storage.incrementUserStat(userId, 'quizzesCompleted');
+    await storage.incrementUserStat(userId, 'quizQuestionsAnswered', total);
+    await storage.incrementUserStat(userId, 'correctAnswers', correct);
+  };
+
+  // Modified document upload to track stats
+  app.post("/api/documents/track-upload", isAuthenticated, async (req, res) => {
+    try {
+      const userId = (req.user as User).id;
+      await trackDocumentUpload(userId);
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to track document upload" });
+    }
+  });
+  
+  // Track flashcard reviews
+  app.post("/api/flashcards/track-review", isAuthenticated, async (req, res) => {
+    try {
+      const userId = (req.user as User).id;
+      const { count } = req.body;
+      await trackFlashcardReview(userId, count || 1);
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to track flashcard review" });
+    }
+  });
+  
+  // Track quiz completion
+  app.post("/api/quizzes/track-completion", isAuthenticated, async (req, res) => {
+    try {
+      const userId = (req.user as User).id;
+      const { correct, total } = req.body;
+      
+      if (typeof correct !== 'number' || typeof total !== 'number') {
+        return res.status(400).json({ message: "Invalid quiz statistics" });
+      }
+      
+      await trackQuizCompletion(userId, correct, total);
+      
+      // Check for new achievements
+      const newAchievements = await storage.checkAndAwardBadges(userId);
+      
+      res.json({
+        success: true,
+        newAchievements: newAchievements.length > 0 ? newAchievements : null
+      });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to track quiz completion" });
     }
   });
 
