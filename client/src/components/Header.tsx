@@ -1,6 +1,6 @@
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
-import { Brain, LogOut, User, Upload, Book, History, Plus, CreditCard } from "lucide-react";
+import { Brain, LogOut, User, Upload, Book, History, Plus, CreditCard, MessageSquare } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -72,6 +72,16 @@ export default function Header() {
                   }`}>
                     <History className="inline-block mr-1 h-4 w-4" />
                     <span>Study History</span>
+                  </a>
+                </Link>
+                <Link href="/chat">
+                  <a className={`px-3 py-2 rounded-md text-sm font-medium ${
+                    location === "/chat" 
+                      ? "text-purple-400 bg-gray-800" 
+                      : "text-gray-300 hover:bg-gray-800 hover:text-purple-400"
+                  }`}>
+                    <MessageSquare className="inline-block mr-1 h-4 w-4" />
+                    <span>AI Chat</span>
                   </a>
                 </Link>
               </div>

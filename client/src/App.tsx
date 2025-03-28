@@ -9,6 +9,7 @@ import Flashcards from "@/pages/Flashcards";
 import Quiz from "@/pages/Quiz";
 import Summary from "@/pages/Summary";
 import Pricing from "@/pages/Pricing";
+import Chat from "@/pages/Chat";
 import AuthPage from "@/pages/auth-page";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -32,6 +33,7 @@ function Router() {
       <ProtectedRoute path="/flashcards/:id" component={Flashcards} />
       <ProtectedRoute path="/quiz/:id" component={Quiz} />
       <ProtectedRoute path="/summary/:id" component={Summary} />
+      <ProtectedRoute path="/chat" component={Chat} />
       <Route component={NotFound} />
     </Switch>
   );

@@ -4,11 +4,25 @@ import { storage } from "./storage";
 import { PDFExtract, PDFExtractOptions } from "pdf.js-extract";
 import { InsertFlashcard, InsertQuiz, InsertSummary } from "@shared/schema";
 
-if (!process.env.GEMINI_API_KEY) {
-  throw new Error("GEMINI_API_KEY environment variable is not set");
+// Initialize with placeholder, will be initialized properly when needed
+let genAI: GoogleGenerativeAI;
+let model: any;
+
+// Function to initialize the AI model
+function initializeAI() {
+  if (!process.env.GEMINI_API_KEY) {
+    console.error("Warning: GEMINI_API_KEY environment variable is not set");
+    throw new Error("GEMINI_API_KEY environment variable is not set");
+  }
+  
+  if (!genAI) {
+    genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+    model = genAI.getGenerativeModel({ model: "gemini-pro" });
+    console.log("Gemini AI initialized successfully");
+  }
+  
+  return { genAI, model };
 }
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-const model = genAI.getGenerativeModel({ model: "gemini-pro" });
 const pdfExtract = new PDFExtract();
 
 async function extractTextFromPDF(filePath: string): Promise<string> {
@@ -25,6 +39,9 @@ async function extractTextFromPDF(filePath: string): Promise<string> {
 
 async function generateFlashcards(text: string, documentId: number): Promise<InsertFlashcard[]> {
   try {
+    // Initialize AI if not done yet
+    initializeAI();
+    
     const prompt = `Create 10 flashcards from this text. Format as JSON array with 'front' (question/concept) and 'back' (answer/explanation) properties:\n\n${text.substring(0, 15000)}`;
     const result = await model.generateContent(prompt);
     const response = await result.response;
@@ -43,6 +60,9 @@ async function generateFlashcards(text: string, documentId: number): Promise<Ins
 
 async function generateQuiz(text: string, documentId: number, type: string = "multiple-choice", difficulty: string = "medium"): Promise<InsertQuiz> {
   try {
+    // Initialize AI if not done yet
+    initializeAI();
+    
     const prompt = `Create a ${type} quiz at ${difficulty} difficulty level from this text. Return JSON with 'questions' array. Each question needs 'question', 'options' (array for multiple-choice, omit for true/false), 'correctAnswer' (index or boolean), and 'explanation':\n\n${text.substring(0, 15000)}`;
     const result = await model.generateContent(prompt);
     const response = await result.response;
@@ -62,6 +82,9 @@ async function generateQuiz(text: string, documentId: number, type: string = "mu
 
 async function generateSummary(text: string, documentId: number): Promise<InsertSummary> {
   try {
+    // Initialize AI if not done yet
+    initializeAI();
+    
     const prompt = `Create a study summary from this text. Return JSON with 'keyConcepts' (array of strings), 'terminology' (array of objects with 'term' and 'definition'), and 'summary' (string):\n\n${text.substring(0, 15000)}`;
     const result = await model.generateContent(prompt);
     const response = await result.response;
@@ -76,6 +99,26 @@ async function generateSummary(text: string, documentId: number): Promise<Insert
   } catch (error) {
     console.error("Error generating summary:", error);
     throw new Error("Failed to generate summary");
+  }
+}
+
+// Chat function
+export async function generateChatResponse(message: string): Promise<string> {
+  try {
+    // Initialize AI if not done yet
+    initializeAI();
+    
+    const prompt = `You are an AI study assistant helping a student. 
+    Respond to the following message in a helpful, friendly, and educational manner:
+    ${message}`;
+    
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    
+    return response.text();
+  } catch (error) {
+    console.error("Error generating chat response:", error);
+    throw new Error("Failed to generate chat response");
   }
 }
 

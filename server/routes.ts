@@ -6,7 +6,7 @@ import fs from "fs";
 import path from "path";
 import { dirname } from "path";
 import { fileURLToPath } from "url";
-import { processDocument } from "./openai";
+import { processDocument, generateChatResponse } from "./openai";
 import { z } from "zod";
 import { insertDocumentSchema, User } from "@shared/schema";
 import { setupAuth } from "./auth";
@@ -218,22 +218,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { message } = req.body;
       
-      // Simple response simulation for now
-      const responses = [
-        "I've analyzed the document, and the key concepts include quantitative analysis, theoretical models, and empirical evidence.",
-        "Based on your document, I'd recommend focusing on these main points: 1) Methodology, 2) Results interpretation, and 3) Applications.",
-        "Let me help you understand this material better. The most important aspect is understanding how the theories connect to real-world applications.",
-        "Great question! The document discusses several approaches to problem-solving, with an emphasis on critical thinking and systematic analysis.",
-        "I've created a summary of the document. It covers the introduction to the topic, methodology used, key findings, and conclusions with implications for future research."
-      ];
+      if (!message || typeof message !== 'string') {
+        return res.status(400).json({ message: "Missing or invalid message" });
+      }
       
-      const responseIndex = Math.floor(Math.random() * responses.length);
-      
-      // In a production app, you would use an actual AI model here
-      // For example: const result = await openaiClient.chat.completions.create({...})
-      
-      // Return a random response from the array
-      res.json({ response: responses[responseIndex] });
+      const response = await generateChatResponse(message);
+      res.json({ response });
     } catch (error) {
       console.error("Chat error:", error);
       res.status(500).json({ message: "Failed to process chat message" });

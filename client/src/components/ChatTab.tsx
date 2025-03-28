@@ -1,10 +1,10 @@
-
-import React, { useState, useRef, useEffect } from 'react';
-import { Button } from './ui/button';
-import { Input } from './ui/input';
-import { ScrollArea } from './ui/scroll-area';
-import { useToast } from '@/hooks/use-toast';
-import { User, BookOpenText, Send, Loader2, Bot, Sparkles } from 'lucide-react';
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Card } from "@/components/ui/card";
+import { useToast } from "@/hooks/use-toast";
+import { Loader2 } from "lucide-react";
 
 interface Message {
   role: 'user' | 'assistant';
@@ -15,26 +15,12 @@ export function ChatTab() {
   const { toast } = useToast();
   const initialMessage: Message = { 
     role: 'assistant', 
-    content: 'Hello! I\'m your AI study assistant. Ask me questions about your document or select a suggested topic below.' 
+    content: 'Hello! I\'m your AI study buddy. How can I help you with your learning today?'
   };
+  
   const [messages, setMessages] = useState<Message[]>([initialMessage]);
-  const [input, setInput] = useState('');
+  const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [suggestedQuestions] = useState<string[]>([
-    "Explain the key concepts in this document",
-    "Summarize the main points",
-    "What are the most important terms to remember?",
-    "Create a quiz about this content",
-    "How can I better understand this material?"
-  ]);
-  const scrollRef = useRef<HTMLDivElement>(null);
-
-  // Auto-scroll to bottom when messages change
-  useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollIntoView({ behavior: 'smooth' });
-    }
-  }, [messages]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -42,118 +28,79 @@ export function ChatTab() {
 
     const userMessage: Message = { role: 'user', content: input };
     setMessages(prev => [...prev, userMessage]);
-    setInput('');
+    setInput("");
     setIsLoading(true);
 
     try {
-      // Connect to our backend chat API
       const response = await fetch('/api/chat', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify({ message: input }),
       });
-      
+
       if (!response.ok) {
-        throw new Error(`Request failed with status ${response.status}`);
+        throw new Error('Failed to get response');
       }
-      
+
       const data = await response.json();
-      
       const assistantMessage: Message = {
-        role: 'assistant', 
-        content: data.response
+        role: 'assistant',
+        content: data.response,
       };
-      
+
       setMessages(prev => [...prev, assistantMessage]);
-      setIsLoading(false);
-      
     } catch (error) {
-      console.error('Chat error:', error);
+      console.error('Error in chat:', error);
       toast({
         title: "Error",
-        description: "Failed to send message. Please try again.",
-        variant: "destructive"
+        description: "Failed to get a response. Please try again.",
+        variant: "destructive",
       });
+    } finally {
       setIsLoading(false);
     }
   };
 
-  const handleSuggestedQuestion = (question: string) => {
-    setInput(question);
-  };
-
   return (
-    <div className="h-full flex flex-col rounded-lg bg-white overflow-hidden">
-      <div className="bg-primary text-white p-4 flex items-center space-x-2">
-        <Bot className="h-5 w-5" />
-        <h3 className="font-medium">AI Study Assistant</h3>
+    <div className="flex flex-col h-full">
+      <div className="flex-1 space-y-4 mb-4 overflow-y-auto p-4 max-h-[60vh]">
+        {messages.map((message, index) => (
+          <Card 
+            key={index} 
+            className={`p-3 ${
+              message.role === 'user' 
+                ? 'bg-primary text-primary-foreground ml-12' 
+                : 'bg-muted mr-12'
+            }`}
+          >
+            <div className="font-medium mb-1">
+              {message.role === 'user' ? 'You' : 'AI Assistant'}
+            </div>
+            <div className="whitespace-pre-wrap">{message.content}</div>
+          </Card>
+        ))}
+        {isLoading && (
+          <div className="flex justify-center items-center py-4">
+            <Loader2 className="h-6 w-6 animate-spin text-primary" />
+            <span className="ml-2">Thinking...</span>
+          </div>
+        )}
       </div>
       
-      <ScrollArea className="flex-1 p-4 h-[400px]">
-        <div className="space-y-4 pb-4">
-          {messages.map((msg, i) => (
-            <div
-              key={i}
-              className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
-            >
-              <div className={`flex max-w-[80%] ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}>
-                <div className={`flex-shrink-0 flex items-center justify-center h-8 w-8 rounded-full mr-2 ${
-                  msg.role === 'user' ? 'bg-primary ml-2' : 'bg-gray-200'
-                }`}>
-                  {msg.role === 'user' ? 
-                    <User className="h-4 w-4 text-white" /> : 
-                    <Sparkles className="h-4 w-4 text-primary" />
-                  }
-                </div>
-                <div className={`p-3 rounded-lg whitespace-pre-wrap ${
-                  msg.role === 'user' 
-                    ? 'bg-primary text-primary-foreground' 
-                    : 'bg-gray-100 text-gray-800'
-                }`}>
-                  {msg.content}
-                </div>
-              </div>
-            </div>
-          ))}
-          <div ref={scrollRef} />
-        </div>
-      </ScrollArea>
-      
-      {suggestedQuestions.length > 0 && !isLoading && messages.length < 3 && (
-        <div className="px-4 py-2 bg-gray-50 border-t">
-          <p className="text-xs text-gray-500 mb-2">Suggested questions:</p>
-          <div className="flex flex-wrap gap-2">
-            {suggestedQuestions.map((question, index) => (
-              <button
-                key={index}
-                onClick={() => handleSuggestedQuestion(question)}
-                className="text-xs bg-white text-primary border border-primary/30 rounded-full px-3 py-1 hover:bg-primary/5 transition-colors"
-              >
-                {question}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-      
-      <form onSubmit={handleSubmit} className="p-4 border-t">
-        <div className="flex gap-2 items-center">
-          <Input
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder="Ask about your document..."
-            disabled={isLoading}
-            className="flex-1"
-          />
-          <Button 
-            type="submit" 
-            disabled={isLoading || !input.trim()}
-            size="icon"
-          >
-            {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-          </Button>
-        </div>
+      <form onSubmit={handleSubmit} className="mt-auto flex gap-2">
+        <Textarea
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          placeholder="Ask me anything about your studies..."
+          className="flex-1 resize-none"
+          rows={2}
+          disabled={isLoading}
+        />
+        <Button type="submit" disabled={isLoading || !input.trim()}>
+          Send
+        </Button>
       </form>
     </div>
   );
