@@ -12,6 +12,7 @@ import { Separator } from "@/components/ui/separator";
 import { Award, BookOpen, Clock, FileText, Star, Trophy } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import ProgressVisualization from "@/components/ProgressVisualization";
 
 interface Achievement {
   id: number;
@@ -35,8 +36,7 @@ export default function Dashboard() {
   const { data: dashboardData, isLoading } = useQuery({
     queryKey: ["/api/dashboard"],
     queryFn: async () => {
-      const data = await apiRequest<DashboardData>("/api/dashboard", { method: "GET" });
-      return data as DashboardData;
+      return await apiRequest<DashboardData>("/api/dashboard");
     },
     enabled: !!user,
   });
@@ -269,88 +269,22 @@ export default function Dashboard() {
               
               <TabsContent value="progress">
                 <div className="grid gap-6 md:grid-cols-2">
-                  {/* Learning Progress */}
+                  {/* Animated Progress Visualization */}
                   <Card className="md:col-span-2">
                     <CardHeader>
                       <CardTitle>Learning Progress</CardTitle>
-                      <CardDescription>Track your study progress over time</CardDescription>
+                      <CardDescription>Visualize your study journey with interactive progress indicators</CardDescription>
                     </CardHeader>
                     <CardContent>
-                      <div className="space-y-6">
-                        <div className="space-y-2">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center space-x-2">
-                              <FileText className="h-4 w-4 text-muted-foreground" />
-                              <span className="text-sm font-medium">Documents Processed</span>
-                            </div>
-                            <span className="text-sm font-bold">{dashboardData.stats.documentsUploaded}</span>
-                          </div>
-                          <Progress value={Math.min(dashboardData.stats.documentsUploaded / 10 * 100, 100)} />
-                          <p className="text-xs text-muted-foreground text-right">
-                            {dashboardData.stats.documentsUploaded}/10 for highest badge
-                          </p>
-                        </div>
-                        
-                        <div className="space-y-2">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center space-x-2">
-                              <BookOpen className="h-4 w-4 text-muted-foreground" />
-                              <span className="text-sm font-medium">Flashcards Reviewed</span>
-                            </div>
-                            <span className="text-sm font-bold">{dashboardData.stats.flashcardsReviewed}</span>
-                          </div>
-                          <Progress value={Math.min(dashboardData.stats.flashcardsReviewed / 100 * 100, 100)} />
-                          <p className="text-xs text-muted-foreground text-right">
-                            {dashboardData.stats.flashcardsReviewed}/100 for highest badge
-                          </p>
-                        </div>
-                        
-                        <div className="space-y-2">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center space-x-2">
-                              <Trophy className="h-4 w-4 text-muted-foreground" />
-                              <span className="text-sm font-medium">Quizzes Completed</span>
-                            </div>
-                            <span className="text-sm font-bold">{dashboardData.stats.quizzesCompleted}</span>
-                          </div>
-                          <Progress value={Math.min(dashboardData.stats.quizzesCompleted / 10 * 100, 100)} />
-                          <p className="text-xs text-muted-foreground text-right">
-                            {dashboardData.stats.quizzesCompleted}/10 for highest badge
-                          </p>
-                        </div>
-                        
-                        <div className="space-y-2">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center space-x-2">
-                              <Clock className="h-4 w-4 text-muted-foreground" />
-                              <span className="text-sm font-medium">Study Time (minutes)</span>
-                            </div>
-                            <span className="text-sm font-bold">{dashboardData.stats.totalStudyTime}</span>
-                          </div>
-                          <Progress value={Math.min(dashboardData.stats.totalStudyTime / 600 * 100, 100)} />
-                          <p className="text-xs text-muted-foreground text-right">
-                            {dashboardData.stats.totalStudyTime}/600 minutes for highest badge
-                          </p>
-                        </div>
-                        
-                        {dashboardData.stats.quizQuestionsAnswered > 0 && (
-                          <div className="space-y-2">
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center space-x-2">
-                                <Star className="h-4 w-4 text-muted-foreground" />
-                                <span className="text-sm font-medium">Quiz Accuracy</span>
-                              </div>
-                              <span className="text-sm font-bold">
-                                {Math.round((dashboardData.stats.correctAnswers / dashboardData.stats.quizQuestionsAnswered) * 100)}%
-                              </span>
-                            </div>
-                            <Progress value={(dashboardData.stats.correctAnswers / dashboardData.stats.quizQuestionsAnswered) * 100} />
-                            <p className="text-xs text-muted-foreground text-right">
-                              Goal: 80% accuracy on 10 quizzes for Quiz Master badge
-                            </p>
-                          </div>
-                        )}
-                      </div>
+                      <ProgressVisualization 
+                        userStats={dashboardData.stats}
+                        milestones={{
+                          documentsUploaded: [1, 5, 10, 25, 50],
+                          flashcardsReviewed: [10, 50, 100, 500, 1000],
+                          quizzesCompleted: [1, 5, 15, 30, 50],
+                          totalStudyTime: [60, 300, 600, 1800, 3600]
+                        }}
+                      />
                     </CardContent>
                   </Card>
                   
