@@ -82,4 +82,4 @@ export async function getPageCount(file: File): Promise<number> {
     console.error('Error getting page count:', error);
     throw new Error('Failed to get PDF page count');
   }
-}
+      }
